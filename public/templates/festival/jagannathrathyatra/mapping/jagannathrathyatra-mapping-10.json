@@ -1,0 +1,72 @@
+﻿{
+    "frameId":  "Frame_1",
+    "templateName":  "Default Frame 1",
+    "canvasSize":  {
+                       "width":  729,
+                       "height":  729
+                   },
+    "elements":  [
+                     {
+                         "id":  "shop",
+                         "type":  "text",
+                         "default_text":  "chai g and family",
+                         "x":  36,
+                         "y":  155,
+                         "width":  270,
+                         "height":  54,
+                         "fontSize":  45,
+                         "fontFamily":  "Gloria Hallelujah, cursive",
+                         "fontWeight":  "bold",
+                         "color":  "#412107",
+                         "alignment":  "left",
+                         "text_transform":  "uppercase"
+                     },
+                     {
+                         "id":  "phone",
+                         "type":  "number",
+                         "default_text":  "+91 98765 43210",
+                         "x":  59,
+                         "y":  713,
+                         "width":  202,
+                         "height":  34,
+                         "fontSize":  23,
+                         "fontFamily":  "Outfit, sans-serif",
+                         "fontWeight":  "bold",
+                         "color":  "#44240d",
+                         "alignment":  "left",
+                         "text_transform":  "none"
+                     },
+                     {
+                         "id":  "email",
+                         "type":  "text",
+                         "default_text":  "your@email.com",
+                         "x":  319,
+                         "y":  713,
+                         "width":  202,
+                         "height":  27,
+                         "fontSize":  22,
+                         "fontFamily":  "Outfit, sans-serif",
+                         "fontWeight":  "bold",
+                         "color":  "#442207",
+                         "alignment":  "left",
+                         "text_transform":  "none"
+                     },
+                     {
+                         "id":  "logo",
+                         "type":  "logo",
+                         "default_text":  "",
+                         "x":  9,
+                         "y":  14,
+                         "width":  81,
+                         "height":  81,
+                         "fontSize":  16,
+                         "fontFamily":  "",
+                         "fontWeight":  "normal",
+                         "color":  "#000000",
+                         "alignment":  "left",
+                         "text_transform":  "none",
+                         "maxWidth":  81,
+                         "maxHeight":  81
+                     }
+                 ]
+}

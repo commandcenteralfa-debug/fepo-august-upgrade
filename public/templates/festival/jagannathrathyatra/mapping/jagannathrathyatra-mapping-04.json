@@ -1,0 +1,72 @@
+﻿{
+    "frameId":  "Frame_1",
+    "templateName":  "Default Frame 1",
+    "canvasSize":  {
+                       "width":  729,
+                       "height":  729
+                   },
+    "elements":  [
+                     {
+                         "id":  "shop",
+                         "type":  "text",
+                         "default_text":  "p.denterprises",
+                         "x":  16,
+                         "y":  35,
+                         "width":  270,
+                         "height":  54,
+                         "fontSize":  49,
+                         "fontFamily":  "Papyrus, fantasy",
+                         "fontWeight":  "bold",
+                         "color":  "#a02005",
+                         "alignment":  "left",
+                         "text_transform":  "none"
+                     },
+                     {
+                         "id":  "phone",
+                         "type":  "number",
+                         "default_text":  "+91 98765 43210",
+                         "x":  57,
+                         "y":  696,
+                         "width":  202,
+                         "height":  34,
+                         "fontSize":  20,
+                         "fontFamily":  "Outfit, sans-serif",
+                         "fontWeight":  "bold",
+                         "color":  "#f5f1e5",
+                         "alignment":  "left",
+                         "text_transform":  "none"
+                     },
+                     {
+                         "id":  "email",
+                         "type":  "text",
+                         "default_text":  "pdenterprises2005@gmail.com",
+                         "x":  63,
+                         "y":  666,
+                         "width":  202,
+                         "height":  27,
+                         "fontSize":  23,
+                         "fontFamily":  "Open Sans, sans-serif",
+                         "fontWeight":  "bold",
+                         "color":  "#1a314a",
+                         "alignment":  "left",
+                         "text_transform":  "none"
+                     },
+                     {
+                         "id":  "logo",
+                         "type":  "logo",
+                         "default_text":  "",
+                         "x":  518,
+                         "y":  7,
+                         "width":  81,
+                         "height":  81,
+                         "fontSize":  0,
+                         "fontFamily":  "",
+                         "fontWeight":  "normal",
+                         "color":  "#000000",
+                         "alignment":  "left",
+                         "text_transform":  "none",
+                         "maxWidth":  81,
+                         "maxHeight":  81
+                     }
+                 ]
+}
