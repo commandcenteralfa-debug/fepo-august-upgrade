@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Code, TrendingUp, Megaphone, DollarSign } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 import NavBar from "@/components/NavBar";
 import HeroBannerCarousel from "@/components/HeroBannerCarousel";
@@ -184,32 +184,25 @@ const festivalItems = [
 
 const categoryItems = [
   {
-    id: "it-tech",
-    title: "IT & Tech",
-    subtitle: "Modern blue gradients + code icons",
-    gradient: "from-blue-600 via-cyan-500 to-blue-400",
-    icon: <Code className="w-4 h-4 md:w-8 md:h-8 text-white" />,
+    id: "dj",
+    title: "DJ",
+    subtitle: "Music & nightlife",
+    gradient: "from-purple-600 via-fuchsia-500 to-pink-500",
+    image: businessCardIconUrl("business-card-05.png"),
   },
   {
-    id: "finance",
-    title: "Finance",
-    subtitle: "Gold/green money themes + charts",
-    gradient: "from-emerald-600 via-green-500 to-lime-400",
-    icon: <DollarSign className="w-4 h-4 md:w-8 md:h-8 text-white" />,
+    id: "real-estate",
+    title: "Real Estate",
+    subtitle: "Property & homes",
+    gradient: "from-amber-600 via-orange-500 to-yellow-400",
+    image: businessCardIconUrl("business-card-08.png"),
   },
   {
-    id: "marketing",
-    title: "Marketing",
-    subtitle: "Bold pink/orange + growth arrows",
-    gradient: "from-orange-500 via-pink-500 to-rose-500",
-    icon: <TrendingUp className="w-4 h-4 md:w-8 md:h-8 text-white" />,
-  },
-  {
-    id: "sales",
-    title: "Sales",
-    subtitle: "Dynamic red gradients + deal badges",
-    gradient: "from-red-600 via-orange-600 to-yellow-500",
-    icon: <Megaphone className="w-4 h-4 md:w-8 md:h-8 text-white" />,
+    id: "fashion",
+    title: "Fashion",
+    subtitle: "Style & retail",
+    gradient: "from-rose-500 via-pink-500 to-fuchsia-500",
+    image: businessCardIconUrl("business-card-09.png"),
   },
 ];
 
@@ -298,6 +291,7 @@ export default function HomePage() {
         title="Business Categories" 
         items={categoryItems} 
         onItemClick={handleFestivalClick}
+        imageStyle="full"
       />
 
       <BusinessHolidaySection />

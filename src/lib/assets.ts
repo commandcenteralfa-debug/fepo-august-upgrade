@@ -15,6 +15,14 @@ export function festivalMappingsUrl(festivalId: string): string {
   return `/templates/festival/${festivalId}/mapping`;
 }
 
+export function festivalFrameTemplatesUrl(festivalId: string, frame: "phone-frame" | "email-frame"): string {
+  return `/templates/festival/${festivalId}/${frame}/templates`;
+}
+
+export function festivalFrameMappingsUrl(festivalId: string, frame: "phone-frame" | "email-frame"): string {
+  return `/templates/festival/${festivalId}/${frame}/mapping`;
+}
+
 export function festivalLogoUrl(filename: string): string {
   return `${ASSET_URLS.festivalLogos}/${filename}`;
 }

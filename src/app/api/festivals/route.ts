@@ -1,15 +1,24 @@
 import { readdirSync, existsSync, readFileSync } from "fs";
 import { NextResponse } from "next/server";
-import { ASSET_DIRS, festivalTemplatesDir, festivalMappingsDir } from "@/lib/assets.server";
-import { festivalTemplatesUrl, festivalMappingsUrl } from "@/lib/assets";
+import { ASSET_DIRS, festivalTemplatesDir, festivalMappingsDir, festivalFrameTemplatesDir, festivalFrameMappingsDir } from "@/lib/assets.server";
+import { festivalTemplatesUrl, festivalMappingsUrl, festivalFrameTemplatesUrl, festivalFrameMappingsUrl } from "@/lib/assets";
 
 export const dynamic = "force-dynamic";
+
+type FrameKind = "phone-frame" | "email-frame";
+
+interface FrameTemplate {
+  image: string;
+  mapping: string;
+}
 
 interface TemplateInfo {
   id: number;
   image: string;
   mapping: string;
   canvas_dim: { w: number; h: number };
+  phoneFrame?: FrameTemplate;
+  emailFrame?: FrameTemplate;
 }
 
 interface FestivalInfo {
@@ -37,6 +46,33 @@ const numericSort = (a: string, b: string) => {
   return numA - numB;
 };
 
+function scanFrameTemplates(festivalId: string, frame: FrameKind): FrameTemplate[] {
+  const templatesDir = festivalFrameTemplatesDir(festivalId, frame);
+  const mappingsDir = festivalFrameMappingsDir(festivalId, frame);
+
+  if (!existsSync(templatesDir) || !existsSync(mappingsDir)) return [];
+
+  const templateFiles = readdirSync(templatesDir)
+    .filter((f) => IMAGE_EXTS.some((ext) => f.toLowerCase().endsWith(ext)))
+    .sort(numericSort);
+
+  const mappingFiles = readdirSync(mappingsDir)
+    .filter((f) => f.endsWith(".json"))
+    .sort(numericSort);
+
+  const pairCount = Math.min(templateFiles.length, mappingFiles.length);
+  const templates: FrameTemplate[] = [];
+
+  for (let i = 0; i < pairCount; i++) {
+    templates.push({
+      image: `${festivalFrameTemplatesUrl(festivalId, frame)}/${templateFiles[i]}`,
+      mapping: `${festivalFrameMappingsUrl(festivalId, frame)}/${mappingFiles[i]}`,
+    });
+  }
+
+  return templates;
+}
+
 function scanFestival(festivalId: string): FestivalInfo {
   const templatesDir = festivalTemplatesDir(festivalId);
   const mappingsDir = festivalMappingsDir(festivalId);
@@ -57,12 +93,17 @@ function scanFestival(festivalId: string): FestivalInfo {
 
   const pairCount = Math.min(templateFiles.length, mappingFiles.length);
 
+  const phoneFrames = scanFrameTemplates(festivalId, "phone-frame");
+  const emailFrames = scanFrameTemplates(festivalId, "email-frame");
+
   for (let i = 0; i < pairCount; i++) {
     templates.push({
       id: i + 1,
       image: `${festivalTemplatesUrl(festivalId)}/${templateFiles[i]}`,
       mapping: `${festivalMappingsUrl(festivalId)}/${mappingFiles[i]}`,
       canvas_dim: readCanvasDim(mappingsDir, mappingFiles[i]),
+      phoneFrame: phoneFrames[i],
+      emailFrame: emailFrames[i],
     });
   }
 

@@ -7,8 +7,8 @@ import { MATRIX_CONFIGS } from "@/lib/designMatrix";
 const initialState: DesignState = {
   text: {
     shop: "Your Business Name",
-    phone: "9876543210",
-    email: "your@email.com",
+    phone: "",
+    email: "",
     countryCode: "+91",
   },
   styles: {
@@ -25,6 +25,8 @@ const initialState: DesignState = {
   elementPositions: {},
   elementScales: {},
   elementSizes: {},
+  elementStyles: {},
+  templateConfig: null,
   templateSize: null,
   aspectRatio: "1:1",
   customWidth: 1080,
@@ -138,6 +140,7 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
         elementPositions: {},
         elementScales: {},
         elementSizes: {},
+        elementStyles: {},
         deletedElementIds: [],
         selectedElementId: null,
         isEditing: false,
@@ -165,6 +168,19 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
         },
       };
     }
+    case "SET_ELEMENT_STYLE":
+      return {
+        ...state,
+        elementStyles: {
+          ...state.elementStyles,
+          [action.payload.id]: {
+            ...state.elementStyles[action.payload.id],
+            ...action.payload.style,
+          },
+        },
+      };
+    case "SET_TEMPLATE_CONFIG":
+      return { ...state, templateConfig: action.payload };
     case "SET_TEMPLATE_SIZE":
       return { ...state, templateSize: action.payload };
     case "REMOVE_ELEMENT": {
@@ -172,14 +188,17 @@ function designReducer(state: DesignState, action: DesignAction): DesignState {
       const elementPositions = { ...state.elementPositions };
       const elementScales = { ...state.elementScales };
       const elementSizes = { ...state.elementSizes };
+      const elementStyles = { ...state.elementStyles };
       delete elementPositions[id];
       delete elementScales[id];
       delete elementSizes[id];
+      delete elementStyles[id];
       return {
         ...state,
         elementPositions,
         elementScales,
         elementSizes,
+        elementStyles,
         selectedElementId: null,
         deletedElementIds: state.deletedElementIds.includes(id) ? state.deletedElementIds : [...state.deletedElementIds, id],
       };
@@ -210,6 +229,7 @@ const ELEMENT_ACTIONS = new Set<DesignAction["type"]>([
   "SET_POSITION",
   "SET_ELEMENT_SCALE",
   "SET_ELEMENT_SIZE",
+  "SET_ELEMENT_STYLE",
 ]);
 
 const UNDOABLE_ACTIONS = new Set<DesignAction["type"]>([
@@ -224,6 +244,7 @@ const UNDOABLE_ACTIONS = new Set<DesignAction["type"]>([
   "SET_POSITION",
   "SET_ELEMENT_SCALE",
   "SET_ELEMENT_SIZE",
+  "SET_ELEMENT_STYLE",
   "REMOVE_ELEMENT",
   "RESET_POSITIONS",
   "RESET_ALL",

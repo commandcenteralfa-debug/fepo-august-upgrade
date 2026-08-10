@@ -5,6 +5,7 @@ import {
   MIN_BOX_WIDTH,
   RESIZE_HANDLES,
   computeAnchorFromBox,
+  computeAspectResizedBox,
   computeBoxFromAnchor,
   computeResizedBox,
   getResizeCursor,
@@ -53,6 +54,16 @@ describe("computeAnchorFromBox", () => {
   it("defaults a missing alignment to left", () => {
     expect(computeAnchorFromBox({}, box.boxX, box.boxY, box.width, box.height))
       .toEqual({ x: 40, y: 70 });
+  });
+
+  it("anchors top-anchored elements (logos) at the box top-left", () => {
+    expect(computeAnchorFromBox({ alignment: "left", anchorVertical: "top" }, box.boxX, box.boxY, box.width, box.height))
+      .toEqual({ x: 40, y: 30 });
+  });
+
+  it("anchors center-aligned top-anchored elements at the top-center", () => {
+    expect(computeAnchorFromBox({ alignment: "center", anchorVertical: "top" }, box.boxX, box.boxY, box.width, box.height))
+      .toEqual({ x: 140, y: 30 });
   });
 });
 
@@ -117,6 +128,57 @@ describe("computeResizedBox", () => {
     const box = computeResizedBox({ corner: "tl", ...start }, -50, -30);
     expect(box.boxX + box.width).toBe(start.startBoxX + start.startWidth);
     expect(box.boxY + box.height).toBe(start.startBoxY + start.startHeight);
+  });
+});
+
+describe("computeAspectResizedBox", () => {
+  const start = { startBoxX: 200, startBoxY: 200, startWidth: 200, startHeight: 100 };
+  const aspect = start.startWidth / start.startHeight; // 2
+
+  it("preserves the aspect ratio from the bottom-right handle", () => {
+    const box = computeAspectResizedBox({ corner: "br", ...start }, 60, 40, 729, 729, aspect);
+    expect(box).toEqual({ boxX: 200, boxY: 200, width: 260, height: 130 });
+  });
+
+  it("keeps the box inside the canvas when pushed past the edge", () => {
+    const nearRight = { startBoxX: 600, startBoxY: 200, startWidth: 100, startHeight: 50 };
+    const box = computeAspectResizedBox({ corner: "br", ...nearRight }, 300, 0, 729, 729, 2);
+    expect(box.boxX + box.width).toBe(CANVAS_SIZE);
+    expect(box.width / box.height).toBeCloseTo(2, 1);
+  });
+
+  it("clamps to the minimum size", () => {
+    const box = computeAspectResizedBox({ corner: "br", ...start }, -500, 0, 729, 729, aspect);
+    expect(box.width).toBe(MIN_BOX_WIDTH);
+    expect(box.width / box.height).toBeCloseTo(aspect, 5);
+  });
+
+  const cornerCases: { corner: ResizeCorner; dx: number; dy: number }[] = [
+    { corner: "br", dx: 60, dy: 40 },
+    { corner: "bl", dx: -60, dy: 40 },
+    { corner: "tr", dx: 60, dy: -40 },
+    { corner: "tl", dx: -60, dy: -40 },
+    { corner: "tc", dx: 0, dy: -40 },
+    { corner: "bc", dx: 0, dy: 40 },
+    { corner: "ml", dx: -60, dy: 0 },
+    { corner: "mr", dx: 60, dy: 0 },
+  ];
+
+  it("preserves the aspect ratio for every handle", () => {
+    for (const c of cornerCases) {
+      const box = computeAspectResizedBox({ corner: c.corner, ...start }, c.dx, c.dy, 729, 729, aspect);
+      expect(box.width / box.height).toBeCloseTo(aspect, 5);
+    }
+  });
+
+  it("keeps the top-anchored (logo) box anchored for every handle", () => {
+    for (const c of cornerCases) {
+      const box = computeAspectResizedBox({ corner: c.corner, ...start }, c.dx, c.dy, 729, 729, aspect);
+      const anchor = computeAnchorFromBox({ alignment: "left", anchorVertical: "top" }, box.boxX, box.boxY, box.width, box.height);
+      // A logo's box is drawn at its anchor directly, so the anchor must be the box top-left.
+      expect(anchor.x).toBe(box.boxX);
+      expect(anchor.y).toBe(box.boxY);
+    }
   });
 });
 

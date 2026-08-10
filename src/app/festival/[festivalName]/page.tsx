@@ -2,7 +2,7 @@ import { FestivalType } from "@/types/design";
 import ClientHomeWrapper from "@/components/ClientHomeWrapper";
 
 const ALL_FESTIVALS: string[] = [
-  "diwali", "holi", "dussehra", "navratri", "rama_navami", "finance", "it-tech", "marketing", "sales",
+  "diwali", "holi", "dussehra", "navratri", "rama_navami", "finance", "it-tech", "marketing", "sales", "dj", "real-estate", "fashion",
   "christmas", "christmaseve", "eid", "eidalfitr", "idulzuha", "durgapuja", "durgapujaashtami", "ganeshchaturthi",
   "janmashtami", "rakshabandhan", "mahashivratri", "onam", "pongal", "chetichand", "baisakhi",
   "vaisakhi", "eastersunday", "goodfriday", "ugadi", "gurupurnima", "buddapurnima", "gurunanakjayanti", "mahavirjayanti",

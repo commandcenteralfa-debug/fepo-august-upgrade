@@ -1,0 +1,72 @@
+{
+  "frameId": "Frame_1",
+  "templateName": "Default Frame 1",
+  "canvasSize": {
+    "width": 1080,
+    "height": 1080
+  },
+  "elements": [
+    {
+      "id": "shop",
+      "type": "text",
+      "default_text": "Thakkar and thakkar associates",
+      "x": 540,
+      "y": 56,
+      "width": 726,
+      "height": 112,
+      "fontSize": 48,
+      "fontFamily": "Arial Black, sans-serif",
+      "fontWeight": "normal",
+      "color": "#ff8415",
+      "alignment": "center",
+      "text_transform": "uppercase"
+    },
+    {
+      "id": "phone",
+      "type": "number",
+      "default_text": "+91 98765 43210",
+      "x": 363,
+      "y": 1030,
+      "width": 354,
+      "height": 86,
+      "fontSize": 36,
+      "fontFamily": "Tiro Devanagari Hindi",
+      "fontWeight": "bold",
+      "color": "#000000",
+      "alignment": "left",
+      "text_transform": "none"
+    },
+    {
+      "id": "email",
+      "type": "text",
+      "default_text": "yourBusiness@emailaddress.com",
+      "x": 338,
+      "y": 986,
+      "width": 420,
+      "height": 92,
+      "fontSize": 25,
+      "fontFamily": "Tiro Devanagari Hindi",
+      "fontWeight": "bold",
+      "color": "#000000",
+      "alignment": "left",
+      "text_transform": "none"
+    },
+    {
+      "id": "logo",
+      "type": "logo",
+      "default_text": "",
+      "x": 960,
+      "y": 553,
+      "width": 120,
+      "height": 120,
+      "fontSize": 24,
+      "fontFamily": "",
+      "fontWeight": "normal",
+      "color": "#000000",
+      "alignment": "left",
+      "text_transform": "none",
+      "maxWidth": 120,
+      "maxHeight": 120
+    }
+  ]
+}

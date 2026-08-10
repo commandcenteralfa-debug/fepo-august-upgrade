@@ -1,0 +1,72 @@
+{
+  "frameId": "Frame_1",
+  "templateName": "Default Frame 1",
+  "canvasSize": {
+    "width": 1080,
+    "height": 1080
+  },
+  "elements": [
+    {
+      "id": "shop",
+      "type": "text",
+      "default_text": "Business Name",
+      "x": 540,
+      "y": 59,
+      "width": 1070,
+      "height": 118,
+      "fontSize": 48,
+      "fontFamily": "MS Serif, serif",
+      "fontWeight": "bold",
+      "color": "#213368",
+      "alignment": "center",
+      "text_transform": "uppercase"
+    },
+    {
+      "id": "phone",
+      "type": "number",
+      "default_text": "+91 98765 43210",
+      "x": 412,
+      "y": 975,
+      "width": 354,
+      "height": 86,
+      "fontSize": 32,
+      "fontFamily": "Tiro Devanagari Hindi",
+      "fontWeight": "bold",
+      "color": "#ffffff",
+      "alignment": "left",
+      "text_transform": "none"
+    },
+    {
+      "id": "email",
+      "type": "text",
+      "default_text": "yourBusiness@emailaddress.com",
+      "x": 346,
+      "y": 1018,
+      "width": 420,
+      "height": 92,
+      "fontSize": 24,
+      "fontFamily": "Tiro Devanagari Hindi",
+      "fontWeight": "bold",
+      "color": "#000000",
+      "alignment": "left",
+      "text_transform": "none"
+    },
+    {
+      "id": "logo",
+      "type": "logo",
+      "default_text": "",
+      "x": 960,
+      "y": 553,
+      "width": 120,
+      "height": 120,
+      "fontSize": 24,
+      "fontFamily": "",
+      "fontWeight": "normal",
+      "color": "#000000",
+      "alignment": "left",
+      "text_transform": "none",
+      "maxWidth": 120,
+      "maxHeight": 120
+    }
+  ]
+}

@@ -16,3 +16,11 @@ export function festivalTemplatesDir(festivalId: string): string {
 export function festivalMappingsDir(festivalId: string): string {
   return join(ASSET_DIRS.festivalTemplates, festivalId, "mapping");
 }
+
+export function festivalFrameTemplatesDir(festivalId: string, frame: "phone-frame" | "email-frame"): string {
+  return join(ASSET_DIRS.festivalTemplates, festivalId, frame, "templates");
+}
+
+export function festivalFrameMappingsDir(festivalId: string, frame: "phone-frame" | "email-frame"): string {
+  return join(ASSET_DIRS.festivalTemplates, festivalId, frame, "mapping");
+}

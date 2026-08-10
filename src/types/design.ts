@@ -1,4 +1,4 @@
-export type FestivalType = "diwali" | "holi" | "dussehra" | "navratri" | "rama_navami" | "finance" | "it-tech" | "marketing" | "sales" | "christmas" | "eid" | "durgapuja" | "ganeshchaturthi" | "janmashtami" | "rakshabandhan" | "default";
+export type FestivalType = "diwali" | "holi" | "dussehra" | "navratri" | "rama_navami" | "finance" | "it-tech" | "marketing" | "sales" | "dj" | "real-estate" | "fashion" | "christmas" | "eid" | "durgapuja" | "ganeshchaturthi" | "janmashtami" | "rakshabandhan" | "default";
 
 export type LogoAnchor = "top-left" | "top-center" | "bottom-center" | "badge";
 export type TextLayout = "vertical-sidebar" | "centered-stack" | "split-header-footer" | "floating-minimalist";
@@ -13,6 +13,21 @@ export interface MatrixConfig {
 export interface TextStyle {
   color: string;
   fontSize: number;
+}
+
+/** Minimal view of a template mapping element used by the editor sidebar. */
+export interface TemplateElementInfo {
+  id: string;
+  type: string;
+  color?: string;
+  fontSize?: number;
+  font_size?: number;
+  alignment?: string;
+}
+
+/** The fetched template mapping JSON (kept in context for the editor sidebar). */
+export interface TemplateConfig {
+  elements: TemplateElementInfo[];
 }
 
 export interface DesignState {
@@ -36,6 +51,10 @@ export interface DesignState {
   elementPositions: Record<string, { x: number; y: number }>;
   elementScales: Record<string, number>;
   elementSizes: Record<string, { width: number; height: number }>;
+  /** Per-element style overrides (color/fontSize) applied on top of the mapping JSON. */
+  elementStyles: Record<string, { color?: string; fontSize?: number }>;
+  /** Fetched mapping JSON for the active template (read by the sidebar controls). */
+  templateConfig: TemplateConfig | null;
   templateSize: { width: number; height: number } | null;
   aspectRatio: string;
   customWidth: number;
@@ -62,6 +81,8 @@ export type DesignAction =
   | { type: "SET_POSITION"; payload: { id: string; x: number; y: number } }
   | { type: "SET_ELEMENT_SCALE"; payload: { id: string; scale: number } }
   | { type: "SET_ELEMENT_SIZE"; payload: { id: string; width: number; height: number } }
+  | { type: "SET_ELEMENT_STYLE"; payload: { id: string; style: Partial<{ color: string; fontSize: number }> } }
+  | { type: "SET_TEMPLATE_CONFIG"; payload: TemplateConfig | null }
   | { type: "SET_TEMPLATE_SIZE"; payload: { width: number; height: number } | null }
   | { type: "REMOVE_ELEMENT"; payload: { id: string } }
   | { type: "RESET_POSITIONS" }

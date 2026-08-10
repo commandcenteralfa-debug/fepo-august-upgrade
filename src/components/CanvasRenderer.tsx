@@ -5,6 +5,7 @@ import { useDesign, getCanvasDimensions } from "@/context/DesignContext";
 import { autoFitText, drawGradientBg, drawRoundedRect, getTemplateTransform, wrapText, type ImageDrawRect } from "@/lib/canvasUtils";
 import { computeBoxFromAnchor, type Rect } from "@/lib/resizeUtils";
 import { useElementEditor, type EditableItem } from "@/hooks/useElementEditor";
+import { getActiveFrame } from "@/lib/frameSelector";
 import SelectionOverlay from "./SelectionOverlay";
 
 interface TemplateElement {
@@ -40,6 +41,8 @@ interface FestivalTemplate {
   image: string;
   mapping: string;
   canvas_dim: { w: number; h: number };
+  phoneFrame?: { image: string; mapping: string };
+  emailFrame?: { image: string; mapping: string };
 }
 
 interface FestivalData {
@@ -59,6 +62,9 @@ interface CanvasRendererProps {
 
 const HIT_PADDING = 40;
 const LINE_HEIGHT_RATIO = 1.3;
+const SHOP_IDS = ["shop", "shop_name", "business_name"];
+const PHONE_IDS = ["phone", "phone_number", "contact", "contact_number"];
+const EMAIL_IDS = ["email"];
 // Mapping JSONs sit slightly too high/left on the template; shift them down by
 // 19px and right by 2px (on the 1080 canvas) while keeping scale at 100%.
 const JSON_OFFSET_X_RATIO = 2 / 1080;
@@ -67,10 +73,14 @@ const JSON_OFFSET_Y_RATIO = 19 / 1080;
 const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const logoImageRef = useRef<HTMLImageElement | null>(null);
+  // Bumped when the logo image finishes loading/clearing so the canvas redraws
+  // without waiting for any other state change (e.g. toggling edit mode).
+  const [logoImageVersion, setLogoImageVersion] = useState(0);
   const [templateImage, setTemplateImage] = useState<HTMLImageElement | null>(null);
   const [templateMappingConfig, setTemplateMappingConfig] = useState<TemplateMappingConfig | null>(null);
   const { state, dispatch } = useDesign();
   const { width: canvasWidth, height: canvasHeight } = getCanvasDimensions(state);
+  const frame = getActiveFrame(state.text.phone, state.text.email);
 
   // Stable dispatch access for effects (wrappedDispatch identity changes every
   // render, so it must not appear in effect dependency arrays).
@@ -164,30 +174,47 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
         },
       });
 
+      const activeImage =
+        frame === "phone"
+          ? template.phoneFrame?.image || template.image
+          : frame === "email"
+            ? template.emailFrame?.image || template.image
+            : template.image;
+      const activeMapping =
+        frame === "phone"
+          ? template.phoneFrame?.mapping || template.mapping
+          : frame === "email"
+            ? template.emailFrame?.mapping || template.mapping
+            : template.mapping;
+
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.src = template.image;
+      img.src = activeImage;
       img.onload = () => setTemplateImage(img);
       img.onerror = () => setTemplateImage(null);
 
-      if (template.mapping) {
-        fetch(template.mapping)
+      if (activeMapping) {
+        fetch(activeMapping)
           .then(res => res.json())
           .then(data => {
             setTemplateMappingConfig(data);
+            dispatchRef.current({ type: "SET_TEMPLATE_CONFIG", payload: data });
           })
           .catch(() => {
             setTemplateMappingConfig(null);
+            dispatchRef.current({ type: "SET_TEMPLATE_CONFIG", payload: null });
           });
       } else {
         setTemplateMappingConfig(null);
+        dispatchRef.current({ type: "SET_TEMPLATE_CONFIG", payload: null });
       }
     } else {
       dispatchRef.current({ type: "SET_TEMPLATE_SIZE", payload: null });
       setTemplateImage(null);
       setTemplateMappingConfig(null);
+      dispatchRef.current({ type: "SET_TEMPLATE_CONFIG", payload: null });
     }
-  }, [state.activeFestival, variantIndex, getCurrentTemplate]);
+  }, [state.activeFestival, variantIndex, frame, getCurrentTemplate]);
 
   useEffect(() => {
     if (state.logoUrl) {
@@ -195,9 +222,11 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
       img.src = state.logoUrl;
       img.onload = () => {
         logoImageRef.current = img;
+        setLogoImageVersion((v) => v + 1);
       };
     } else {
       logoImageRef.current = null;
+      setLogoImageVersion((v) => v + 1);
     }
   }, [state.logoUrl]);
 
@@ -235,11 +264,15 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
     const elScale = getElementScale(element.id);
     const fontWeight = element.font_weight || element.fontWeight ? `${element.font_weight || element.fontWeight} ` : "";
     const baseFontSize = element.font_size || element.fontSize || 0;
+    const styleOverride = state.elementStyles[element.id];
 
-    // Use the authoring-space fontSize scaled onto the canvas. Fall back to
-    // fluid clamping only when the JSON carries no fontSize.
+    // Use the authoring-space fontSize scaled onto the canvas. An "Advanced
+    // Edit" override wins, otherwise the JSON fontSize, otherwise fluid
+    // clamping when the JSON carries no fontSize.
     let fontSize = baseFontSize;
-    if (!(baseFontSize > 0)) {
+    if (styleOverride?.fontSize) {
+      fontSize = styleOverride.fontSize;
+    } else if (!(baseFontSize > 0)) {
       if (element.id === "business_name" || element.id === "shop_name" || element.id === "shop") {
         fontSize = Math.max(24, Math.min(42, 3 * (canvasWidth / 100)));
       } else {
@@ -258,7 +291,7 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
       + (metrics.actualBoundingBoxDescent || fontPx * 0.3);
     ctx.textAlign = "left";
     return { width: actualWidth, height: actualHeight };
-  }, [getElementScale, canvasWidth, templateTransform]);
+  }, [getElementScale, canvasWidth, templateTransform, state.elementStyles]);
 
   const getElementBoxSize = useCallback((
     element: TemplateElement,
@@ -307,14 +340,26 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
   ): Rect => {
     const pos = getElementPos(element);
     const box = getElementBoxSize(element, userText, canvasScale);
+    // Images/logos are drawn at their top-left corner (x/y in the JSON is the
+    // top-left), unlike text whose anchor is the box center.
+    if (element.type === "logo") {
+      return { x: pos.x, y: pos.y, width: box.width, height: box.height };
+    }
     return computeBoxFromAnchor(pos, element.alignment, box.width, box.height);
   }, [getElementPos, getElementBoxSize]);
 
   const getUserText = useCallback((element: TemplateElement): string => {
-    if (element.id === "shop_name" || element.id === "business_name" || element.id === "shop") return state.text.shop;
-    if (element.id === "contact_number" || element.id === "phone_number" || element.id === "contact" || element.id === "phone") return state.text.countryCode ? `${state.text.countryCode} ${state.text.phone}` : state.text.phone;
-    if (element.id === "email") return state.text.email;
-    return "";
+    if (SHOP_IDS.includes(element.id)) return state.text.shop;
+    if (PHONE_IDS.includes(element.id)) return state.text.countryCode ? `${state.text.countryCode} ${state.text.phone}` : state.text.phone;
+    if (EMAIL_IDS.includes(element.id)) return state.text.email;
+    return element.default_text || "";
+  }, [state.text]);
+
+  const isElementHidden = useCallback((element: TemplateElement): boolean => {
+    if (SHOP_IDS.includes(element.id)) return !state.text.shop.trim();
+    if (PHONE_IDS.includes(element.id)) return !state.text.phone.trim();
+    if (EMAIL_IDS.includes(element.id)) return !state.text.email.trim();
+    return false;
   }, [state.text]);
 
   const getProcessedText = useCallback((element: TemplateElement, userText: string): string => {
@@ -335,9 +380,17 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
   const editableItems = useMemo<EditableItem[]>(() => {
     if (!templateMappingConfig) return [];
     return templateMappingConfig.elements
-      .filter((el) => el.type === "text" || el.type === "number")
-      .map((el) => ({ id: el.id, type: el.type, alignment: el.alignment }));
-  }, [templateMappingConfig]);
+      .filter((el) =>
+        el.type === "text" || el.type === "number" || (el.type === "logo" && !!state.logoUrl)
+      )
+      .filter((el) => !isElementHidden(el))
+      .map((el) => {
+        if (el.type === "logo") {
+          return { id: el.id, type: el.type, alignment: el.alignment, resizable: true, lockAspectRatio: true, anchorVertical: "top" as const };
+        }
+        return { id: el.id, type: el.type, alignment: el.alignment };
+      });
+  }, [templateMappingConfig, isElementHidden, state.logoUrl]);
 
   const getRect = useCallback((item: EditableItem, scale: number): Rect | null => {
     const el = templateMappingConfig?.elements.find((e) => e.id === item.id);
@@ -386,14 +439,18 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
     const processedText = getProcessedText(element, userText);
 
     const elScale = getElementScale(element.id);
-    ctx.fillStyle = element.color;
+    const styleOverride = state.elementStyles[element.id];
+    ctx.fillStyle = styleOverride?.color || element.color;
     const fontWeight = element.font_weight || element.fontWeight ? `${element.font_weight || element.fontWeight} ` : "";
     const baseFontSize = element.font_size || element.fontSize || 0;
 
-    // Use the authoring-space fontSize scaled onto the canvas. Fall back to
-    // fluid clamping only when the JSON carries no fontSize.
+    // Use the authoring-space fontSize scaled onto the canvas. An "Advanced
+    // Edit" override wins, otherwise the JSON fontSize, otherwise fluid
+    // clamping when the JSON carries no fontSize.
     let clampedFontSize = baseFontSize;
-    if (!(baseFontSize > 0)) {
+    if (styleOverride?.fontSize) {
+      clampedFontSize = styleOverride.fontSize;
+    } else if (!(baseFontSize > 0)) {
       if (element.id === "business_name" || element.id === "shop_name" || element.id === "shop") {
         clampedFontSize = Math.max(24, Math.min(42, 3 * (canvasWidth / 100)));
       } else {
@@ -449,7 +506,7 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
 
     ctx.restore();
     ctx.textAlign = "left";
-  }, [getElementBoxRect, getElementScale, getProcessedText, templateTransform]);
+  }, [getElementBoxRect, getElementScale, getProcessedText, templateTransform, state.elementStyles]);
 
   const draw = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
     const scale = width / 729;
@@ -475,7 +532,9 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
       });
     }
 
-    if (logoImageRef.current) {
+    const hasTemplateMapping = !!(templateMappingConfig && templateMappingConfig.elements.length > 0);
+
+    if (logoImageRef.current && !hasTemplateMapping) {
       let logoX = 20 * scale, logoY = 20 * scale;
       const logoW = 80 * scale, logoH = 80 * scale;
 
@@ -492,17 +551,18 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
       ctx.drawImage(logoImageRef.current, logoX, logoY, logoW, logoH);
     }
 
-    if (templateMappingConfig && templateMappingConfig.elements.length > 0) {
+    if (hasTemplateMapping) {
       templateMappingConfig.elements.forEach(element => {
         if (deletedElementIds.includes(element.id)) return;
         if (element.type === "text" || element.type === "number") {
+          if (isElementHidden(element)) return;
           const userText = getUserText(element);
           drawTextElement(ctx, element, userText, 1); // coordinates already mapped to logical canvas units
         } else if (element.type === "logo" && logoImageRef.current) {
           const pos = getElementPos(element);
-          const logoW = (element.width || 120) * templateTransform.scaleX;
-          const logoH = (element.height || 120) * templateTransform.scaleY;
-          ctx.drawImage(logoImageRef.current, pos.x, pos.y, logoW, logoH);
+          const box = getElementBoxSize(element, "", 1);
+          const elScale = getElementScale(element.id);
+          ctx.drawImage(logoImageRef.current, pos.x, pos.y, box.width * elScale, box.height * elScale);
         }
       });
     } else if (matrixConfig.textLayout === "vertical-sidebar") {
@@ -607,7 +667,7 @@ const CanvasRenderer = ({ variantIndex, isMain = false }: CanvasRendererProps) =
         ctx.restore();
       }
     }
-  }, [state, matrixConfig, sparkles, templateImage, imageDrawRect, templateTransform, templateMappingConfig, drawTextElement, getElementPos, getUserText, isMain, guides, deletedElementIds, canvasWidth, canvasHeight]);
+  }, [state, matrixConfig, sparkles, templateImage, imageDrawRect, templateTransform, templateMappingConfig, drawTextElement, getElementPos, getElementBoxSize, getElementScale, getUserText, isElementHidden, isMain, guides, deletedElementIds, canvasWidth, canvasHeight, logoImageVersion]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

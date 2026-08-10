@@ -105,7 +105,7 @@ export function drawGradientBg(
   ctx: CanvasRenderingContext2D,
   width: number,
   height: number,
-  festival: "diwali" | "holi" | "dussehra" | "navratri" | "rama_navami" | "finance" | "it-tech" | "marketing" | "sales"
+  festival: "diwali" | "holi" | "dussehra" | "navratri" | "rama_navami" | "finance" | "it-tech" | "marketing" | "sales" | "dj" | "real-estate" | "fashion"
 ) {
   const gradient = ctx.createLinearGradient(0, 0, width, height);
 
@@ -154,6 +154,21 @@ export function drawGradientBg(
       gradient.addColorStop(0, "#dc2626");
       gradient.addColorStop(0.5, "#f97316");
       gradient.addColorStop(1, "#fbbf24");
+      break;
+    case "dj":
+      gradient.addColorStop(0, "#6b21a8");
+      gradient.addColorStop(0.5, "#c026d3");
+      gradient.addColorStop(1, "#db2777");
+      break;
+    case "real-estate":
+      gradient.addColorStop(0, "#b45309");
+      gradient.addColorStop(0.5, "#ea580c");
+      gradient.addColorStop(1, "#f59e0b");
+      break;
+    case "fashion":
+      gradient.addColorStop(0, "#be123c");
+      gradient.addColorStop(0.5, "#ec4899");
+      gradient.addColorStop(1, "#d946ef");
       break;
   }
 

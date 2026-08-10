@@ -114,14 +114,94 @@ export function computeResizedBox(
   return { boxX: newBoxX, boxY: newBoxY, width: newW, height: newH };
 }
 
+const CORNER_DIRECTION: Record<ResizeCorner, {
+  sideX: "right" | "left" | "center";
+  sideY: "down" | "up" | "center";
+}> = {
+  tl: { sideX: "left", sideY: "up" },
+  tc: { sideX: "center", sideY: "up" },
+  tr: { sideX: "right", sideY: "up" },
+  ml: { sideX: "left", sideY: "center" },
+  mr: { sideX: "right", sideY: "center" },
+  bl: { sideX: "left", sideY: "down" },
+  bc: { sideX: "center", sideY: "down" },
+  br: { sideX: "right", sideY: "down" },
+};
+
+/**
+ * Aspect-ratio-locked resize. Like `computeResizedBox` but the secondary
+ * dimension is always derived from the primary one via `aspect`
+ * (width / height), so the box can never stretch. The corner opposite the
+ * dragged handle stays fixed; edge handles re-center the free axis.
+ */
+export function computeAspectResizedBox(
+  r: ResizeSnapshot,
+  dx: number,
+  dy: number,
+  canvasWidth: number = 729,
+  canvasHeight: number = 729,
+  aspect: number
+): { boxX: number; boxY: number; width: number; height: number } {
+  const sx = r.startBoxX, sy = r.startBoxY;
+  const sw = r.startWidth, sh = r.startHeight;
+  const safeAspect = aspect > 0 ? aspect : 1;
+  const dir = CORNER_DIRECTION[r.corner];
+
+  const centerX = sx + sw / 2;
+  const centerY = sy + sh / 2;
+  const pinnedX = dir.sideX === "right" ? sx : dir.sideX === "left" ? sx + sw : centerX;
+  const pinnedY = dir.sideY === "down" ? sy : dir.sideY === "up" ? sy + sh : centerY;
+
+  // Available room on each axis (for centered axes, limited on both sides).
+  const maxW = dir.sideX === "right"
+    ? canvasWidth - pinnedX
+    : dir.sideX === "left"
+      ? pinnedX
+      : 2 * Math.min(centerX, canvasWidth - centerX);
+  const maxH = dir.sideY === "down"
+    ? canvasHeight - pinnedY
+    : dir.sideY === "up"
+      ? pinnedY
+      : 2 * Math.min(centerY, canvasHeight - centerY);
+
+  const widthDriven = dir.sideX !== "center";
+  const primary = widthDriven
+    ? (dir.sideX === "right" ? sw + dx : sw - dx)
+    : (dir.sideY === "down" ? sh + dy : sh - dy);
+  const primaryMin = widthDriven ? MIN_BOX_WIDTH : MIN_BOX_HEIGHT;
+  const primaryMax = widthDriven ? maxW : maxH;
+
+  let w: number, h: number;
+  if (widthDriven) {
+    w = Math.max(primaryMin, Math.min(primary, primaryMax));
+    h = w / safeAspect;
+    h = Math.max(MIN_BOX_HEIGHT, Math.min(h, maxH));
+    w = h * safeAspect;
+  } else {
+    h = Math.max(primaryMin, Math.min(primary, primaryMax));
+    w = h * safeAspect;
+    w = Math.max(MIN_BOX_WIDTH, Math.min(w, maxW));
+    h = w / safeAspect;
+  }
+
+  return {
+    boxX: Math.round(dir.sideX === "right" ? pinnedX : dir.sideX === "left" ? pinnedX - w : centerX - w / 2),
+    boxY: Math.round(dir.sideY === "down" ? pinnedY : dir.sideY === "up" ? pinnedY - h : centerY - h / 2),
+    width: Math.round(w),
+    height: Math.round(h),
+  };
+}
+
 /**
  * Recompute the element anchor from the resized box so the opposite corner
  * stays fixed. The box is vertically centered on the element's y
  * (by = pos.y - bh / 2), so y must follow the box center; horizontally the
- * anchor follows the box edge depending on the element alignment.
+ * anchor follows the box edge depending on the element alignment. Top-anchored
+ * elements (images/logos drawn at their top-left corner) instead anchor y to
+ * the box's top edge.
  */
 export function computeAnchorFromBox(
-  element: { alignment?: string },
+  element: { alignment?: string; anchorVertical?: "top" | "center" },
   boxX: number,
   boxY: number,
   width: number,
@@ -133,7 +213,8 @@ export function computeAnchorFromBox(
     : alignment === "right"
       ? boxX + width
       : boxX;
-  return { x, y: boxY + height / 2 };
+  const y = element.anchorVertical === "top" ? boxY : boxY + height / 2;
+  return { x, y };
 }
 
 /**

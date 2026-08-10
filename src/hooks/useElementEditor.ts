@@ -28,6 +28,7 @@ import {
   SNAP_THRESHOLD,
   getResizeCursor,
   computeAnchorFromBox,
+  computeAspectResizedBox,
   computeBoxFromAnchor,
   computeResizedBox,
   type Rect,
@@ -41,6 +42,17 @@ export interface EditableItem {
   alignment?: string;
   /** Set to false to hide the resize handles for this item. Defaults to true. */
   resizable?: boolean;
+  /**
+   * Preserve the item's aspect ratio while resizing (width/height stay
+   * proportional). Defaults to false.
+   */
+  lockAspectRatio?: boolean;
+  /**
+   * How the anchor's y relates to the box. "center" (default) treats the
+   * anchor y as the box's vertical center (text boxes). "top" treats it as the
+   * box's top edge (images/logos drawn at their top-left corner).
+   */
+  anchorVertical?: "top" | "center";
 }
 
 export interface ElementEditorCallbacks {
@@ -264,7 +276,9 @@ export function useElementEditor(args: UseElementEditorArgs): ElementEditorHandl
     const { items, deletedIds, getBoxSize, getAnchor, canvasWidth, canvasHeight } = adaptersRef.current;
     const size = getBoxSize(item, 1);
     if (!size) return { x: anchorX, y: anchorY, v: null, h: null };
-    const rect = computeBoxFromAnchor({ x: anchorX, y: anchorY }, item.alignment, size.width, size.height);
+    const rect = item.anchorVertical === "top"
+      ? { x: anchorX, y: anchorY, width: size.width, height: size.height }
+      : computeBoxFromAnchor({ x: anchorX, y: anchorY }, item.alignment, size.width, size.height);
 
     const xCandidates = [rect.x, rect.x + rect.width / 2, rect.x + rect.width];
     const yCandidates = [rect.y, rect.y + rect.height / 2, rect.y + rect.height];
@@ -275,7 +289,10 @@ export function useElementEditor(args: UseElementEditorArgs): ElementEditorHandl
       if (el.id === item.id || deletedIds.includes(el.id)) return;
       const elSize = getBoxSize(el, 1);
       if (!elSize) return;
-      const elRect = computeBoxFromAnchor(getAnchor(el), el.alignment, elSize.width, elSize.height);
+      const elAnchor = getAnchor(el);
+      const elRect = el.anchorVertical === "top"
+        ? { x: elAnchor.x, y: elAnchor.y, width: elSize.width, height: elSize.height }
+        : computeBoxFromAnchor(elAnchor, el.alignment, elSize.width, elSize.height);
       xTargets.push(elRect.x, elRect.x + elRect.width / 2, elRect.x + elRect.width);
       yTargets.push(elRect.y, elRect.y + elRect.height / 2, elRect.y + elRect.height);
     });
@@ -325,7 +342,10 @@ export function useElementEditor(args: UseElementEditorArgs): ElementEditorHandl
     } else {
       clampedX = Math.max(0, Math.min(canvasWidth - bw, x));
     }
-    return { x: clampedX, y: Math.max(bh / 2, Math.min(canvasHeight - bh / 2, y)) };
+    const clampedY = item.anchorVertical === "top"
+      ? Math.max(0, Math.min(canvasHeight - bh, y))
+      : Math.max(bh / 2, Math.min(canvasHeight - bh / 2, y));
+    return { x: clampedX, y: clampedY };
   }, []);
 
   /** Begin a pointer gesture: select on mousedown, then start drag or resize. */
@@ -393,8 +413,10 @@ export function useElementEditor(args: UseElementEditorArgs): ElementEditorHandl
         const dx = (pos.x - r.startMouseX) / sX;
         const dy = (pos.y - r.startMouseY) / sY;
 
-        const box = computeResizedBox(r, dx, dy, cW, cH);
         const item = adaptersRef.current.items.find((i) => i.id === r.itemId);
+        const box = item?.lockAspectRatio && r.startWidth > 0 && r.startHeight > 0
+          ? computeAspectResizedBox(r, dx, dy, cW, cH, r.startWidth / r.startHeight)
+          : computeResizedBox(r, dx, dy, cW, cH);
         if (item) {
           const anchor = computeAnchorFromBox(item, box.boxX, box.boxY, box.width, box.height);
           callbacks.onMove(r.itemId, { x: Math.round(anchor.x), y: Math.round(anchor.y) });
@@ -456,8 +478,10 @@ export function useElementEditor(args: UseElementEditorArgs): ElementEditorHandl
         const dx = (pos.x - r.startMouseX) / sX;
         const dy = (pos.y - r.startMouseY) / sY;
 
-        const box = computeResizedBox(r, dx, dy, cW, cH);
         const item = adaptersRef.current.items.find((i) => i.id === r.itemId);
+        const box = item?.lockAspectRatio && r.startWidth > 0 && r.startHeight > 0
+          ? computeAspectResizedBox(r, dx, dy, cW, cH, r.startWidth / r.startHeight)
+          : computeResizedBox(r, dx, dy, cW, cH);
         if (item) {
           const anchor = computeAnchorFromBox(item, box.boxX, box.boxY, box.width, box.height);
           callbacks.onMove(r.itemId, { x: Math.round(anchor.x), y: Math.round(anchor.y) });
