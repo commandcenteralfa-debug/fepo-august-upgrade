@@ -3,6 +3,7 @@ export const ASSET_URLS = {
   festivalLogos: "/homepage/logos/festival",
   wishingCardIcons: "/homepage/logos/wishing-card",
   businessCardIcons: "/homepage/logos/business-card",
+  businessCategoryLogos: "/homepage/logos/business-category",
   calendarDateLogos: "/homepage/calendar/date",
   rathYatraBackground: "/homepage/backgrounds/rath-yatra.png",
 } as const;
@@ -33,4 +34,8 @@ export function wishingCardIconUrl(filename: string): string {
 
 export function businessCardIconUrl(filename: string): string {
   return `${ASSET_URLS.businessCardIcons}/${filename}`;
+}
+
+export function businessCategoryIconUrl(filename: string): string {
+  return `${ASSET_URLS.businessCategoryLogos}/${filename}`;
 }

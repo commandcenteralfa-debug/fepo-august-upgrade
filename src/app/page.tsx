@@ -9,7 +9,7 @@ import HorizontalScrollSection from "@/components/HorizontalScrollSection";
 import Footer from "@/components/Footer";
 import FestiveCalendar from "@/components/FestiveCalendar";
 import BusinessHolidaySection from "@/components/BusinessHolidaySection";
-import { ASSET_URLS, festivalLogoUrl, wishingCardIconUrl, businessCardIconUrl } from "@/lib/assets";
+import { ASSET_URLS, festivalLogoUrl, wishingCardIconUrl, businessCardIconUrl, businessCategoryIconUrl } from "@/lib/assets";
 
 const festivalItems = [
   {
@@ -182,27 +182,27 @@ const festivalItems = [
   },
 ];
 
-const categoryItems = [
+const fallbackCategoryItems = [
   {
     id: "dj",
     title: "DJ",
     subtitle: "Music & nightlife",
     gradient: "from-purple-600 via-fuchsia-500 to-pink-500",
-    image: businessCardIconUrl("business-card-05.png"),
+    image: businessCategoryIconUrl("dj.png"),
   },
   {
     id: "real-estate",
     title: "Real Estate",
     subtitle: "Property & homes",
     gradient: "from-amber-600 via-orange-500 to-yellow-400",
-    image: businessCardIconUrl("business-card-08.png"),
+    image: businessCategoryIconUrl("real-estate.png"),
   },
   {
     id: "fashion",
     title: "Fashion",
     subtitle: "Style & retail",
     gradient: "from-rose-500 via-pink-500 to-fuchsia-500",
-    image: businessCardIconUrl("business-card-09.png"),
+    image: businessCategoryIconUrl("fashion.png"),
   },
 ];
 
@@ -231,9 +231,20 @@ function normalizeLogoSlug(name: string): string {
   return name.toLowerCase().replace(/-logo$/, "").replace(/[-\s]/g, "");
 }
 
+function humanizeCategoryName(name: string): string {
+  return name
+    .replace(/-logo$/, "")
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .map((word) => (word.length <= 3 ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(" ");
+}
+
 export default function HomePage() {
   const router = useRouter();
   const [resolvedItems, setResolvedItems] = useState(festivalItems);
+  const [categoryItems, setCategoryItems] = useState(fallbackCategoryItems);
 
   useEffect(() => {
     fetch("/api/festival-logos/home")
@@ -249,6 +260,22 @@ export default function HomePage() {
             return matchedSrc ? { ...item, image: matchedSrc } : item;
           })
         );
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/business-category-logos/home")
+      .then((res) => res.json())
+      .then((data: HomeLogo[]) => {
+        const items = data.map((logo) => ({
+          id: normalizeLogoSlug(logo.slug),
+          title: humanizeCategoryName(logo.slug),
+          subtitle: "Business logo template",
+          gradient: "from-slate-700 via-slate-600 to-slate-400",
+          image: logo.src,
+        }));
+        if (items.length > 0) setCategoryItems(items);
       })
       .catch(() => {});
   }, []);

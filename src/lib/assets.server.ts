@@ -5,6 +5,7 @@ const PUBLIC_DIR = join(process.cwd(), "public");
 export const ASSET_DIRS = {
   heroBanners: join(PUBLIC_DIR, "homepage", "banners"),
   festivalLogos: join(PUBLIC_DIR, "homepage", "logos", "festival"),
+  businessCategoryLogos: join(PUBLIC_DIR, "homepage", "logos", "business-category"),
   calendarDateLogos: join(PUBLIC_DIR, "homepage", "calendar", "date"),
   festivalTemplates: join(PUBLIC_DIR, "templates", "festival"),
 } as const;
